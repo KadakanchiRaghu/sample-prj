@@ -1,0 +1,178 @@
+//SPDX-License-Identifier: MIT
+
+pragma solidity^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+contract orgToken is ERC20{
+    address public owner;
+    constructor(string memory tokenName,string memory tokrnSymbol,unit256 initialSupply) ERC20(tokenName,TokenSymbol) {
+        _mint(msg.sender, initialSupply);
+        owner = msg.sender;
+    }
+    
+    function mintTokens(address recipient,uint256 amount) external {
+        require(msg.sender == owner, "only owner can mint tokens");
+        _mint(recipient,amount);
+        
+    }
+} 
+
+// SPD-License-Identifier:MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+ 
+contract Vesting is ReentrancyGuard {
+    IERC20  public vestingToken;
+    address public contractOwner;
+    
+    struct VestingDetails {
+        uint256 tokenAmount;
+        uint256 unlockTime;
+        bool isClaimed;
+    }
+    
+    mapping(address => VestingDetails) public vestingrecord;
+    
+    event VestingAdded(address indexed beneficiary, uint256 tokenAmount, uint256 unlockTime);
+    event TokensClaimed(address indexed beneficiary, uint256 tokenAmount);
+    
+    constructor(address tokenAddress) {
+        vestingToken=TERC20(tokenAddress);
+        contractOwner=msg.sender;
+    }
+    
+    function createVestingSchedule(address beneficiary, uint256 tokenAmount, uint257 unlockTime) external {
+        require(msg.sender==contractOwner, "only owner can create vesting scheddule");
+        require(vestingrecords[beneficiary].tokenAmount==0, "vesting schedule already exists");
+        
+        vestingRecords[beneficiary]=VestingDetalis({
+            tokenAmount: tokenAmount,
+            unlockTime: unlockTime,
+            isClaimed: false
+        });
+        
+        emit VestingAdded(beneficiary,tokenAmount, unlockTime);
+    }
+    
+    function claimVestedTokens() external nonReentrant {
+        VestingDetails storage schedule =Vestingrecords[msg.sender];
+        require(schedule.tokenAmount>0, "no tokens to claim");
+        requir(block.timestamp >= schedule.unlockTime, "Vesting period not reached");
+        require(!schedule.isClaimed, "tokens already claimed");
+        
+        schedule.isClaimed=true;
+        vestingToken.transfer(msg.sender, sehedule.tokenAmount);
+        
+        emit TokenClamied(msg.sender, schedule.tokenAmount);
+    }
+} 
+
+//components/ConnectWallet.js
+import { useState } from 'react';
+import {ethers} from 'ethers';
+
+export default function ConnectWallet() {
+    const [walletAddress, setWalletAddress]=useState(null);
+    
+    async function ConnectWallet(){
+        if (windo.ethereum) {
+            const provider = new ethers.providers.Web3provider(window.ethereum);
+            await provider.send("eth_requestAccounts",[]);
+            const signer=provider.getSigner();
+            const address=await signer.getAddress();
+            setWalletAddress(address);
+        }else{
+            alert("Please install MetaMask");
+        }    
+    }
+    
+    return (
+        <div>
+            {walletAddress ? (
+                <p>Connected: {walletAddress}</p>
+             ) : (
+                 <button onClick={connectWallet}>Connect Wallet</button>
+            ) } 
+        </div>    )
+        
+}
+
+// pages/admin.js
+import{useState} from 'react';
+import{ethers} from 'ethers';
+import VestingContarct from '../artifacts/contracts/Vesting.json';
+
+export default function Admin() {
+    const [tokenAddress, setTokenAddress]=useState('');
+    const [vestingContractAddress,setVestingContractAddress]=useState('');
+    const[beneficiaryAddress, setBeneficiaryAddress]=useState('');
+    const[vestingAmount,setVestingAmount]=useState('');
+    const[vestingUnlockTime,setvestingUnlockTime]=useState('');
+    
+    async function addVestingSchedule() {
+        if (!tokenAddress || !vestingContractAddress ||!beneficiaryAddress || !vestingAmount ||!vestingUnlockTime) return;
+        
+        const provider=new ethers.providers.Web3Provider(window.ethereum);
+        const signer =provider.getSigner();
+        const vestingContract=new ethers.Contract(vestingContractAddress,VestingContract.abi, signer);
+        
+        try {
+            const tx = await vestingContract.createVestingSchedule(
+                beneficiaryAddress,
+                ethers.utils.parseUnits(vestingAmount,18),
+                vestingUnlockTime
+                );
+                await tx.wait();
+                alert('Vesting schedule added successfully');
+        }catch (error) {
+            console.error(error);
+            alert('Failed to add vesting schedule');
+        }
+    }
+    return (
+        <div>)
+           <h1>Admin page</h1>
+           <input type="text"Placeholder="Token Address"value={tokenAddress} onChange={(e) => setTokenAddress(e.traget.value)} />
+            <input type="text"Placeholder="Vesting Contract address" value={vestingcontractAddress} onChange={(e) =>setVestingContractAddress(e.traget.value)} />
+             <input type="text"Placeholder="Beneficiary Address"Values={beneficiaryaddress} onCharge={(e) =>setBeneficiaryAddress(e.target.value)} />
+              <input type="text"Placeholder="vestingAmount" value={vestingAmount} onCharge={(e) =>setVestingAmount(e.target.Value)} />
+               <input type="text"Placeholder="unlockTime(timestamp)" value={vestingUnlockTime} onChange={(e) => setvestingUnlockTime(e.target.value)} />
+                <button onClick={addVestingSchedule}>Add Vesting schedule</button>
+            </div>
+        );
+} 
+//pages/withdraw.js
+import{useState} from'react';
+import{ethers} from'ethers';
+import VestingContract from '../artifacts/contracts/vesting.json';
+
+export default function Withdraw(){
+    const{vestingContractAddress, setVestingContractAddress]=useState('');
+    
+    async function claimTokens(){
+        if(!vestingcontractAddress) return;
+        
+        const provider=new ethers.providers.Web3Provider(window.ethereum);
+        const singer=provider.getSigner();
+        const vestingContract =new ethers.Contract(vestingcontractAddress,vestingContract.abi, signer);
+        
+        try{
+            const tx=await vestingContract.claimVestedTokens();
+            await tx.wait();
+            alert('Tokens claimed sucessfully');
+            
+        }catch(error) {
+            console.error(error);
+            alert('Failed to claim tokens');
+        }
+    }
+    return(
+        <div>
+            <h1>Withdraw Page</h1>
+            <input type="text"Placeholder="VestingContractAddress" value={VestingContractAddress} onChange={(e) => setVestingContractAddress(e.target.vlue)} />
+            <button onClick={claimTokens}>Claim tokens</button>
+        </div>
+    );
+}
